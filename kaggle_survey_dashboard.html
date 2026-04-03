@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" /><meta name="description" content="Interactive dashboard comparing tool adoption, learning habits, and platform preferences between Students and Industry Professionals, based on the 2021 Kaggle ML and Data Science Survey." /><meta name="author" content="Ezzat Alhalabi" /><meta property="og:title" content="Kaggle 2021 ML and Data Science Survey Dashboard" /><meta property="og:type" content="website" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Kaggle 2021 ML & Data Science Survey</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+/* ─── RESET ─────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; }
+button { cursor: pointer; font-family: inherit; }
+
+/* ─── DESIGN TOKENS ─────────────────────────────────────────────── */
+:root {
+  --bg:            #F4F6F9;
+  --surface:       #FFFFFF;
+  --border:        #E5E7EB;
+  --border-light:  #F3F4F6;
+
+  --txt-primary:   #111827;
+  --txt-secondary: #6B7280;
+  --txt-tertiary:  #9CA3AF;
+
+  --navy:    #1E3A5F;
+  --accent:  #2563EB;
+  --teal:    #0D9488;
+  --amber:   #D97706;
+
+  --s-color: #2563EB;
+  --s-fill:  rgba(37,99,235,0.10);
+  --p-color: #0D9488;
+  --p-fill:  rgba(13,148,136,0.10);
+
+  --sidebar-w: 220px;
+  --topbar-h:  56px;
+  --radius:    10px;
+  --radius-sm: 6px;
+  --shadow:    0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* ─── BASE ───────────────────────────────────────────────────────── */
+body {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--txt-primary);
+  min-height: 100vh;
+}
+
+/* ─── TOPBAR ─────────────────────────────────────────────────────── */
+.topbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: var(--topbar-h);
+  background: var(--navy);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  gap: 16px;
+  z-index: 200;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.brand-icon {
+  width: 28px; height: 28px;
+  background: var(--accent);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.brand-icon svg { width: 15px; height: 15px; fill: #fff; }
+
+.brand-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.01em;
+}
+
+.topbar-sep {
+  width: 1px; height: 22px;
+  background: rgba(255,255,255,0.14);
+}
+
+.topbar-title {
+  font-size: 13px;
+  color: rgba(255,255,255,0.60);
+  font-weight: 400;
+}
+
+.topbar-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.topbar-meta {
+  font-size: 12px;
+  color: rgba(255,255,255,0.45);
+}
+
+.topbar-pill { font-size: 11px; font-weight: 600; color: var(--navy); background: rgba(255,255,255,0.88); border-radius: 100px; padding: 3px 11px; } .topbar-notebook-link { font-size: 11px; font-weight: 600; color: #fff; background: var(--accent); border-radius: 100px; padding: 5px 14px; text-decoration: none; transition: background 0.2s, transform 0.15s; white-space: nowrap; } .topbar-notebook-link:hover { background: #1d4ed8; transform: translateY(-1px); }
+
+/* ─── LAYOUT ─────────────────────────────────────────────────────── */
+.layout {
+  display: flex;
+  padding-top: var(--topbar-h);
+  min-height: 100vh;
+}
+
+/* ─── SIDEBAR ────────────────────────────────────────────────────── */
+.sidebar {
+  width: var(--sidebar-w);
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  position: fixed;
+  top: var(--topbar-h);
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  z-index: 100;
+}
+
+.nav-group { padding: 20px 0 4px; }
+
+.nav-group-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--txt-tertiary);
+  padding: 0 16px 8px;
+  display: block;
+}
+
+.nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--txt-secondary);
+  background: transparent;
+  border: none;
+  text-align: left;
+  position: relative;
+  transition: background 0.14s, color 0.14s;
+}
+
+.nav-btn:hover {
+  background: var(--border-light);
+  color: var(--txt-primary);
+}
+
+.nav-btn.active {
+  color: var(--accent);
+  background: #EFF6FF;
+  font-weight: 600;
+}
+
+.nav-btn.active::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 5px; bottom: 5px;
+  width: 3px;
+  background: var(--accent);
+  border-radius: 0 3px 3px 0;
+}
+
+.nav-icon {
+  width: 15px; height: 15px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.6;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.nav-btn.active .nav-icon { opacity: 1; }
+
+.sidebar-foot {
+  margin-top: auto;
+  padding: 16px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--txt-tertiary);
+  line-height: 1.6;
+}
+
+.sidebar-foot strong { color: var(--accent); font-weight: 600; }
+
+/* ─── MAIN ───────────────────────────────────────────────────────── */
+main {
+  margin-left: var(--sidebar-w);
+  flex: 1;
+  padding: 32px 32px 48px;
+  min-width: 0;
+}
+
+/* ─── PAGE HEADER ────────────────────────────────────────────────── */
+.page-header { margin-bottom: 24px; }
+
+.breadcrumb {
+  font-size: 12px;
+  color: var(--txt-tertiary);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.breadcrumb b { color: var(--txt-secondary); font-weight: 500; }
+
+.page-title {
+  font-size: 21px;
+  font-weight: 700;
+  color: var(--txt-primary);
+  letter-spacing: -0.02em;
+  margin-bottom: 5px;
+}
+
+.page-desc {
+  font-size: 13px;
+  color: var(--txt-secondary);
+  line-height: 1.65;
+  max-width: 620px;
+}
+
+.page-desc strong { color: var(--txt-primary); font-weight: 600; }
+
+/* ─── FILTER BAR ─────────────────────────────────────────────────── */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.filter-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--txt-secondary);
+  flex-shrink: 0;
+}
+
+.seg-group {
+  display: flex;
+  background: var(--border-light);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 3px;
+  gap: 2px;
+}
+
+.seg-btn {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 5px 14px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--txt-secondary);
+  transition: all 0.14s;
+  white-space: nowrap;
+}
+
+.seg-btn:hover { background: rgba(0,0,0,0.04); color: var(--txt-primary); }
+
+.seg-btn.active {
+  background: var(--surface);
+  color: var(--txt-primary);
+  box-shadow: var(--shadow);
+  font-weight: 600;
+}
+
+.seg-btn.is-s { color: var(--s-color) !important; }
+.seg-btn.is-p { color: var(--p-color) !important; }
+
+.filter-hint {
+  font-size: 12px;
+  color: var(--txt-tertiary);
+  margin-left: auto;
+}
+
+/* ─── KPI STRIP ──────────────────────────────────────────────────── */
+.kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.kpi {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 22px;
+  box-shadow: var(--shadow);
+  transition: box-shadow 0.2s;
+}
+
+.kpi:hover { box-shadow: var(--shadow-md); }
+
+.kpi.top-navy  { border-top: 3px solid var(--navy); }
+.kpi.top-blue  { border-top: 3px solid var(--accent); }
+.kpi.top-teal  { border-top: 3px solid var(--teal); }
+.kpi.top-amber { border-top: 3px solid var(--amber); }
+
+.kpi-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--txt-tertiary);
+  margin-bottom: 8px;
+}
+
+.kpi-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--txt-primary);
+  letter-spacing: -0.025em;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.kpi-value sup {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--txt-secondary);
+  vertical-align: super;
+}
+
+.kpi-note {
+  font-size: 12px;
+  color: var(--txt-tertiary);
+}
+
+.kpi-note strong { color: var(--txt-secondary); font-weight: 600; }
+
+/* ─── SECTIONS ───────────────────────────────────────────────────── */
+.section { display: none; }
+.section.active { display: block; }
+
+.section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--txt-tertiary);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ─── INSIGHT ROW ────────────────────────────────────────────────── */
+.insight-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.insight {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 13px 15px;
+  font-size: 12.5px;
+  color: var(--txt-secondary);
+  line-height: 1.6;
+  box-shadow: var(--shadow);
+}
+
+.insight strong { color: var(--txt-primary); font-weight: 600; }
+
+/* ─── CHART GRID ─────────────────────────────────────────────────── */
+.grid      { display: grid; gap: 18px; margin-bottom: 18px; }
+.grid-2    { grid-template-columns: repeat(2, 1fr); }
+.grid-1    { grid-template-columns: 1fr; }
+
+/* ─── CHART CARD ─────────────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px 24px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow 0.2s;
+}
+
+.card:hover { box-shadow: var(--shadow-md); }
+
+.card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 3px;
+}
+
+.card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--txt-primary);
+  line-height: 1.3;
+}
+
+.card-q {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--txt-tertiary);
+  background: var(--border-light);
+  border: 1px solid var(--border);
+  padding: 2px 8px;
+  border-radius: 100px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.card-sub {
+  font-size: 12px;
+  color: var(--txt-tertiary);
+  margin-bottom: 18px;
+  line-height: 1.5;
+}
+
+.card-body { flex: 1; position: relative; min-height: 0; }
+
+.legend {
+  display: flex;
+  gap: 16px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--txt-secondary);
+  font-weight: 500;
+}
+
+.swatch {
+  width: 10px; height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* ─── SCROLLBAR ──────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ─── FADE-IN ────────────────────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.card { animation: fadeUp 0.28s ease both; }
+.kpi  { animation: fadeUp 0.28s ease both; }
+.kpi:nth-child(1) { animation-delay: 0.03s; }
+.kpi:nth-child(2) { animation-delay: 0.07s; }
+.kpi:nth-child(3) { animation-delay: 0.11s; }
+.kpi:nth-child(4) { animation-delay: 0.15s; }
+
+/* ─── RESPONSIVE ─────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .kpi-strip { grid-template-columns: repeat(2, 1fr); }
+  .grid-2    { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+  :root { --sidebar-w: 0px; }
+  .sidebar { display: none; }
+  main { margin-left: 0; padding: 20px 16px 40px; }
+  .kpi-strip { grid-template-columns: repeat(2, 1fr); }
+  .topbar-meta, .filter-hint { display: none; }
+}
+
+@media (max-width: 480px) {
+  .kpi-strip { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="topbar"><span class="brand-name">Ezzat Alhalabi</span><div class="topbar-sep"></div>
+  <span class="topbar-title">Kaggle 2021 ML & Data Science Survey</span>
+  <div class="topbar-right">
+    <span class="topbar-meta">25,973 respondents</span>
+    <span class="topbar-pill">EDA</span><a href="https://github.com/ezzat-tech/Kaggle-Survey-2021-Analysis/blob/main/kaggle_survey_eda.ipynb" target="_blank" rel="noopener noreferrer" class="topbar-notebook-link">View Notebook</a></div>
+</header>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar" aria-label="Dashboard sections">
+    <div class="nav-group">
+      <span class="nav-group-label">Overview</span>
+      <button class="nav-btn active" onclick="go('demographics',this)">
+        <svg class="nav-icon" viewBox="0 0 20 20"><circle cx="10" cy="7" r="3"/><path d="M4 17c0-3.314 2.686-6 6-6s6 2.686 6 6"/></svg>
+        Demographics
+      </button>
+    </div>
+    <div class="nav-group">
+      <span class="nav-group-label">Tools & Ecosystem</span>
+      <button class="nav-btn" onclick="go('languages',this)">
+        <svg class="nav-icon" viewBox="0 0 20 20"><polyline points="4 8 8 12 4 16"/><line x1="12" y1="16" x2="20" y2="16"/></svg>
+        Languages & IDEs
+      </button>
+      <button class="nav-btn" onclick="go('ml',this)">
+        <svg class="nav-icon" viewBox="0 0 20 20"><circle cx="5" cy="10" r="2"/><circle cx="15" cy="5" r="2"/><circle cx="15" cy="15" r="2"/><line x1="7" y1="9" x2="13" y2="6"/><line x1="7" y1="11" x2="13" y2="14"/></svg>
+        ML & Frameworks
+      </button>
+      <button class="nav-btn" onclick="go('cloud',this)">
+        <svg class="nav-icon" viewBox="0 0 20 20"><path d="M5 14A4 4 0 1 1 7.5 6.9A5 5 0 1 1 15 14"/></svg>
+        Cloud & Databases
+      </button>
+      <button class="nav-btn" onclick="go('bi',this)">
+        <svg class="nav-icon" viewBox="0 0 20 20"><rect x="2" y="10" width="3" height="8" rx="1"/><rect x="8" y="6" width="3" height="12" rx="1"/><rect x="14" y="2" width="3" height="16" rx="1"/></svg>
+        BI & ML Tools
+      </button>
+    </div>
+    <div class="nav-group">
+      <span class="nav-group-label">Community</span>
+      <button class="nav-btn" onclick="go('learning',this)">
+        <svg class="nav-icon" viewBox="0 0 20 20"><path d="M2 7l8-4 8 4-8 4-8-4z"/><path d="M6 9.5v4c0 1.1 1.79 2 4 2s4-.9 4-2v-4"/></svg>
+        Learning & Media
+      </button>
+    </div>
+    <div class="sidebar-foot">
+      Built by <strong>Ezzat Alhalabi</strong><br>Source: <a href="https://www.kaggle.com/competitions/kaggle-survey-2021/data" target="_blank" rel="noopener noreferrer" style="text-decoration:none"><strong>Kaggle Survey 2021</strong></a><br>
+      Respondents: 25,973
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <main>
+
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+      <div class="breadcrumb">Analytics <span>›</span> <b>ML & Data Science Survey 2021</b></div>
+      <h1 class="page-title">Kaggle ML & Data Science Survey — 2021</h1>
+      <p class="page-desc">Comparing tool adoption, learning habits, and platform preferences between <strong>Students</strong> and <strong>Industry Professionals</strong> in the global ML & Data Science community.</p>
+    </div>
+
+    <!-- FILTER BAR -->
+    <div class="filter-bar">
+      <span class="filter-label">Segment</span>
+      <div class="seg-group">
+        <button class="seg-btn active" id="btn-both"  onclick="setFilter('both',this)">All Respondents</button>
+        <button class="seg-btn"        id="btn-s"     onclick="setFilter('students',this)">Students</button>
+        <button class="seg-btn"        id="btn-p"     onclick="setFilter('professionals',this)">Professionals</button>
+      </div>
+      <span class="filter-hint">% of group selecting each option · multiple choice</span>
+    </div>
+
+    <!-- KPI STRIP -->
+    <div class="kpi-strip">
+      <div class="kpi top-navy">
+        <div class="kpi-label">Total Respondents</div>
+        <div class="kpi-value">25,973</div>
+        <div class="kpi-note">Global survey responses</div>
+      </div>
+      <div class="kpi top-blue">
+        <div class="kpi-label">Industry Professionals</div>
+        <div class="kpi-value">~74<sup>%</sup></div>
+        <div class="kpi-note"><strong>~19,200</strong> working professionals</div>
+      </div>
+      <div class="kpi top-teal">
+        <div class="kpi-label">Students</div>
+        <div class="kpi-value">~26<sup>%</sup></div>
+        <div class="kpi-note"><strong>~6,750</strong> students surveyed</div>
+      </div>
+      <div class="kpi top-amber">
+        <div class="kpi-label">Top Country</div>
+        <div class="kpi-value">India</div>
+        <div class="kpi-note"><strong>~25%</strong> of all respondents</div>
+      </div>
+    </div>
+
+    <!-- ══ DEMOGRAPHICS ══════════════════════════════════════════════ -->
+    <section class="section active" id="sec-demographics">
+      <h2 class="section-title">Respondent Demographics</h2>
+
+      <div class="insight-row">
+        <div class="insight"><strong>Age:</strong> The 25–29 bracket is the largest group overall. Students skew 18–21, professionals skew 25–34.</div>
+        <div class="insight"><strong>Country:</strong> India leads at ~25%, followed by the United States at ~15% — reflecting Kaggle's user base distribution.</div>
+        <div class="insight"><strong>Gender:</strong> ~83% of respondents identify as male, underscoring a persistent diversity challenge across the industry.</div>
+      </div>
+
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="card-head"><h3 class="card-title">Age Distribution</h3><span class="card-q">Q1</span></div>
+          <p class="card-sub">Age group of all survey respondents</p>
+          <div class="card-body"><canvas id="c-age"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3 class="card-title">Top 5 Countries by Respondents</h3><span class="card-q">Q3</span></div>
+          <p class="card-sub">Share of total respondents (%) by country of residence</p>
+          <div class="card-body"><canvas id="c-country"></canvas></div>
+        </div>
+      </div>
+
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="card-head"><h3 class="card-title">Gender Breakdown</h3><span class="card-q">Q2</span></div>
+          <p class="card-sub">Gender identity across all respondents</p>
+          <div class="card-body" style="display:flex;justify-content:center;max-height:220px">
+            <canvas id="c-gender" style="max-width:280px"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3 class="card-title">Education Level — Students vs Professionals</h3><span class="card-q">Q4</span></div>
+          <p class="card-sub">Highest level of formal education (% of group)</p>
+          <div class="card-body"><canvas id="c-edu"></canvas></div>
+          <div class="legend">
+            <div class="legend-item"><div class="swatch" style="background:var(--s-color)"></div>Students</div>
+            <div class="legend-item"><div class="swatch" style="background:var(--p-color)"></div>Professionals</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ LANGUAGES ══════════════════════════════════════════════════ -->
+    <section class="section" id="sec-languages">
+      <h2 class="section-title">Languages & Development Environments</h2>
+
+      <div class="insight-row">
+        <div class="insight"><strong>Python</strong> is used by ~90% of both groups — the clear lingua franca of ML and Data Science.</div>
+        <div class="insight"><strong>SQL adoption gap:</strong> Professionals use SQL considerably more (~58%) than students (~35%), driven by production data workflows.</div>
+        <div class="insight"><strong>VSCode</strong> is the fastest-growing IDE and nearly matches Jupyter Notebook usage among professionals.</div>
+      </div>
+
+      <div class="grid grid-1">
+        <div class="card">
+          <div class="card-head"><h3 class="card-title">Programming Languages Used Regularly</h3><span class="card-q">Q7</span></div>
+          <p class="card-sub">Percentage of each group selecting each language (multiple choice, top 8)</p>
+          <div class="card-body"><canvas id="c-lang" height="180"></canvas></div>
+          <div class="legend">
+            <div class="legend-item"><div class="swatch" style="background:var(--s-color)"></div>Students</div>
+            <div class="legend-item"><div class="swatch" style="background:var(--p-color)"></div>Professionals</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="card-head"><h3 class="card-title">IDEs Used Regularly</h3><span class="card-q">Q9</span></div>
+          <p class="card-sub">Integrated development environments (top 6)</p>
+          <div class="card-body"><canvas id="c-ide" height="200"></canvas></div>
+          <div class="legend">
+            <div class="legend-item"><div class="swatch" style="background:var(--s-color)"></div>Students</div>
+            <div class="legend-item"><div class="swatch" style="background:var(--p-color)"></div>Professionals</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3 class="card-title">Hosted Notebook Platforms</h3><span class="card-q">Q10</span></div>
+          <p class="card-sub">Notebook products used on a regular basis (top 5)</p>
+          <div class="card-body"><canvas id="c-notebooks" height="200"></canvas></div>
+          <div class="legend">
+            <div class="legend-item"><div class="swatch" style="background:var(--s-color)"></div>Students</div>
+            <div class="legend-item"><div class="swatch" style="background:var(--p-color)"></div>Professionals</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ ML ══════════════════════════════════════════════════════════ -->
+    <section class="section" id="sec-ml">
+      <h2 class="section-title">Machine Learning Frameworks & Algorithms</h2>
+
+      <div class="insight-row">
+        <div class="insight"><strong>Scikit-learn</strong> tops both groups — the standard starting point for classical ML across all experience levels.</div>
+        <div class="insight"><strong>XGBoost gap:</strong> Professionals favour XGBoost (~38%) far more than students (~22%), reflecting production modelling demands.</div>
+        <div class="insight"><strong>Linear / Logistic Regression</strong> remains the most used algorithm in both groups, underpinning a majority of real-world tasks.</div>
+      </div>
+
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="card-head"><h3 class="card-title">ML Frameworks Used Regularly</h3><span class="card-q">Q16</span></div>
+          <p class="card-sub">Top 6 frameworks by group (% selecting)</p>
+          <div class="card-body"><canvas id="c-frameworks" height="240"></canvas></div>
+          <div class="legend">
+            <div class="legend-item"><div class="swatch" style="background:var(--s-color)"></div>Students</div>
+            <div class="legend-item"><div class="swatch" style="background:var(--p-color)"></div>Professionals</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3 class="card-title">Visualization Libraries</h3><span class="card-q">Q14</span></div>
+          <p class="card-sub">Data visualization tools used regularly (top 5)</p>
+          <div class="card-body"><canvas id="c-viz" height="240"></canvas></div>
+          <div class="legend">
+            <div class="legend-item"><div class="swatch" style="background:var(--s-color)"></div>Students</div>
+            <div class="legend-item"><div class="swatch" style="background:var(--p-color)"></div>Professionals</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-1">
+        <div class="card">
+          <div class="card-head"><h3 class="card-title">ML Algorithms Used Regularly</h3><span class="card-q">Q17</span></div>
+          <p class="card-sub">Algorithm usage by group — % selecting each (top 6)</p>
+          <div class="card-body"><canvas id="c-algos" height="160"></canvas></div>
+          <div class="legend">
+            <div class="legend-item"><div class="swatch" style="background:var(--s-color)"></div>Students</div>
+            <div class="legend-item"><div class="swatch" style="background:var(--p-color)"></div>Professionals</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ CLOUD ════════════════════════════════════════════════════════ -->
+    <section class="section" id="sec-cloud">
+      <h2 class="section-title">Cloud Platforms & Databases</h2>
+
+      <div class="insight-row">
+        <div class="insight"><strong>AWS</strong> is the most desired cloud platform — strong aspiration from students and solid professional adoption alike.</div>
+        <div class="insight"><strong>MySQL</strong> leads database usage in both groups, especially among students learning relational data fundamentals.</div>
+        <div class="insight"><strong>PostgreSQL</strong> shows a professional lean, adopted more where data engineering and production pipelines are involved.</div>
+      </div>
+
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="card-head"><h3 class="card-title">Cloud Platform Interest — Next 2 Years</h3><span class="card-q">Q27</span></div>
+          <p class="card-sub">Platforms respondents hope to become more familiar with (top 5)</p>
+          <div class="card-body"><canvas id="c-cloud-plat" height="240"></canvas></div>
+          <div class="legend">
+            <div class="legend-item"><div class="swatch" style="background:var(--s-color)"></div>Students</div>
+            <div class="legend-item"><div class="swatch" style="background:var(--p-color)"></div>Professionals</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3 class="card-title">Databases & Big Data Products</h3><span class="card-q">Q32</span></div>
+          <p class="card-sub">Products used on a regular basis (top 6)</p>
+          <div class="card-body"><canvas id="c-db" height="240"></canvas></div>
+          <div class="legend">
+            <div class="legend-item"><div class="swatch" style="background:var(--s-color)"></div>Students</div>
+            <div class="legend-item"><div class="swatch" style="background:var(--p-color)"></div>Professionals</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-1">
+        <div class="card">
+          <div class="card-head"><h3 class="card-title">Cloud Infrastructure Products — Next 2 Years</h3><span class="card-q">Q29</span></div>
+          <p class="card-sub">Specific cloud products students and professionals plan to learn</p>
+          <div class="card-body"><canvas id="c-cloud-prod" height="110"></canvas></div>
+          <div class="legend">
+            <div class="legend-item"><div class="swatch" style="background:var(--s-color)"></div>Students</div>
+            <div class="legend-item"><div class="swatch" style="background:var(--p-color)"></div>Professionals</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ BI ══════════════════════════════════════════════════════════ -->
+    <section class="section" id="sec-bi">
+      <h2 class="section-title">Business Intelligence & ML Management Tools</h2>
+
+      <div class="insight-row">
+        <div class="insight"><strong>Tableau & Power BI</strong> are the two most in-demand BI tools with strong aspiration across both groups.</div>
+        <div class="insight"><strong>MLflow</strong> leads ML experiment tracking interest among professionals seeking reproducible workflows.</div>
+        <div class="insight"><strong>Amazon SageMaker</strong> tops managed ML platform interest, reflecting AWS's dominant cloud position in production ML.</div>
+      </div>
+
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="card-head"><h3 class="card-title">Business Intelligence Tools</h3><span class="card-q">Q34</span></div>
+          <p class="card-sub">BI tools respondents hope to learn in next 2 years (top 5)</p>
+          <div class="card-body"><canvas id="c-bi" height="240"></canvas></div>
+          <div class="legend">
+            <div class="legend-item"><div class="swatch" style="background:var(--s-color)"></div>Students</div>
+            <div class="legend-item"><div class="swatch" style="background:var(--p-color)"></div>Professionals</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3 class="card-title">Managed ML Platforms</h3><span class="card-q">Q31</span></div>
+          <p class="card-sub">Managed ML products to learn in next 2 years (top 5)</p>
+          <div class="card-body"><canvas id="c-mlprod" height="240"></canvas></div>
+          <div class="legend">
+            <div class="legend-item"><div class="swatch" style="background:var(--s-color)"></div>Students</div>
+            <div class="legend-item"><div class="swatch" style="background:var(--p-color)"></div>Professionals</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-1">
+        <div class="card">
+          <div class="card-head"><h3 class="card-title">ML Experiment Tracking Tools</h3><span class="card-q">Q38</span></div>
+          <p class="card-sub">Tools respondents plan to adopt in next 2 years (top 5)</p>
+          <div class="card-body"><canvas id="c-mltrack" height="120"></canvas></div>
+          <div class="legend">
+            <div class="legend-item"><div class="swatch" style="background:var(--s-color)"></div>Students</div>
+            <div class="legend-item"><div class="swatch" style="background:var(--p-color)"></div>Professionals</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ LEARNING ════════════════════════════════════════════════════ -->
+    <section class="section" id="sec-learning">
+      <h2 class="section-title">Learning Platforms & Media Sources</h2>
+
+      <div class="insight-row">
+        <div class="insight"><strong>Coursera</strong> is the most-used platform across both groups, particularly popular with students seeking structured learning paths.</div>
+        <div class="insight"><strong>Udemy</strong> shows stronger adoption among professionals who prefer flexible, on-demand skill-building.</div>
+        <div class="insight"><strong>Blogs</strong> (Towards Data Science, Analytics Vidhya) and <strong>YouTube</strong> are the top two media sources for staying current in the field.</div>
+      </div>
+
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="card-head"><h3 class="card-title">Learning Platforms</h3><span class="card-q">Q40</span></div>
+          <p class="card-sub">Platforms used to begin or complete Data Science courses (top 6)</p>
+          <div class="card-body"><canvas id="c-courses" height="260"></canvas></div>
+          <div class="legend">
+            <div class="legend-item"><div class="swatch" style="background:var(--s-color)"></div>Students</div>
+            <div class="legend-item"><div class="swatch" style="background:var(--p-color)"></div>Professionals</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3 class="card-title">Favourite Media Sources</h3><span class="card-q">Q42</span></div>
+          <p class="card-sub">Sources for ML & Data Science news and content (top 5)</p>
+          <div class="card-body"><canvas id="c-media" height="260"></canvas></div>
+          <div class="legend">
+            <div class="legend-item"><div class="swatch" style="background:var(--s-color)"></div>Students</div>
+            <div class="legend-item"><div class="swatch" style="background:var(--p-color)"></div>Professionals</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+/* ─── DATA ────────────────────────────────────────────────────────── */
+const DATA = {
+  age:       { labels:['18–21','22–24','25–29','30–34','35–39','40–44','45–49','50+'],       values:[14.2,17.8,23.5,16.8,11.2,6.8,4.1,5.6] },
+  country:   { labels:['India','United States','Others','Brazil','Japan'],                    values:[24.8,15.1,12.4,5.2,4.1] },
+  gender:    { labels:['Male','Female','Non-binary / Other'],                                 values:[82.5,16.0,1.5] },
+  edu:       { labels:["Master's","Bachelor's","Doctoral","Some College","Professional"],     students:[28,55,4,11,2], professionals:[38,32,14,9,7] },
+  lang:      { labels:['Python','SQL','R','C / C++','Java','Javascript','Bash','MATLAB'],     students:[90,35,21,20,16,13,11,10], professionals:[88,58,25,16,18,16,18,8] },
+  ide:       { labels:['Jupyter Notebook','VSCode','JupyterLab','PyCharm','RStudio','Spyder'], students:[70,45,35,30,20,18], professionals:[62,51,40,36,22,14] },
+  notebooks: { labels:['Colab','Kaggle Notebooks','Azure Notebooks','SageMaker Studio','Deepnote'], students:[72,48,12,8,9], professionals:[54,32,20,18,10] },
+  frameworks:{ labels:['Scikit-learn','TensorFlow','Keras','PyTorch','XGBoost','LightGBM'],  students:[58,45,38,32,22,12], professionals:[63,48,36,38,38,22] },
+  viz:       { labels:['Matplotlib','Seaborn','Plotly','Ggplot2','Bokeh'],                    students:[74,56,38,18,12], professionals:[72,50,42,22,16] },
+  algos:     { labels:['Linear / Logistic Reg.','Decision Trees / RF','Gradient Boosting','Dense Neural Nets','CNNs','RNNs'], students:[65,58,30,38,35,22], professionals:[71,68,48,40,38,25] },
+  courses:   { labels:['Coursera','Udemy','Kaggle Learn','YouTube','DataCamp','edX'],         students:[46,35,42,38,26,20], professionals:[40,38,30,32,22,16] },
+  media:     { labels:['Blogs (TDS, etc.)','YouTube','Kaggle Forums','Twitter / X','Email Newsletters'], students:[52,48,40,30,22], professionals:[56,42,35,32,30] },
+  cloudPlat: { labels:['AWS','Microsoft Azure','Google Cloud','IBM Cloud','Oracle Cloud'],    students:[55,42,48,14,10], professionals:[52,50,45,16,12] },
+  db:        { labels:['MySQL','PostgreSQL','SQLite','MongoDB','MS SQL Server','BigQuery'],   students:[40,26,22,20,14,12], professionals:[46,38,22,22,26,20] },
+  cloudProd: { labels:['Amazon EC2','Azure Virtual Machines','Google Compute Engine'],        students:[38,28,32], professionals:[45,34,36] },
+  bi:        { labels:['Tableau','Microsoft Power BI','Google Data Studio','Looker','Qlik'], students:[46,40,32,16,12], professionals:[42,38,28,20,16] },
+  mlprod:    { labels:['Amazon SageMaker','Azure ML Studio','Google Vertex AI','Databricks','DataRobot'], students:[42,30,36,18,12], professionals:[40,34,34,24,16] },
+  mltrack:   { labels:['MLflow','TensorBoard','Weights & Biases','Comet.ml','Neptune.ai'],   students:[22,28,18,12,8], professionals:[32,26,24,14,10] }
+};
+
+/* ─── PALETTE ────────────────────────────────────────────────────── */
+const S = '#2563EB', SF = 'rgba(37,99,235,0.10)';
+const P = '#0D9488', PF = 'rgba(13,148,136,0.10)';
+const GRID = 'rgba(229,231,235,0.9)';
+const TICK = '#9CA3AF';
+
+/* ─── CHART DEFAULTS ─────────────────────────────────────────────── */
+Chart.defaults.font.family = "'Plus Jakarta Sans', system-ui, sans-serif";
+Chart.defaults.font.size   = 12;
+Chart.defaults.color       = TICK;
+Chart.defaults.plugins.legend.display = false;
+Object.assign(Chart.defaults.plugins.tooltip, {
+  backgroundColor: '#fff',
+  borderColor:     '#E5E7EB',
+  borderWidth:     1,
+  titleColor:      '#111827',
+  bodyColor:       '#6B7280',
+  padding:         10,
+  boxPadding:      4,
+  callbacks: { label: ctx => ` ${ctx.dataset.label || ''}: ${ctx.parsed.x ?? ctx.parsed.y}%` }
+});
+
+/* ─── STATE ──────────────────────────────────────────────────────── */
+let filter = 'both';
+const charts = {};
+
+/* ─── AXIS PRESETS ───────────────────────────────────────────────── */
+const xPct    = { ticks:{ callback:v=>v+'%', font:{size:11} }, grid:{ color:GRID }, border:{ display:false } };
+const yClean  = { grid:{ display:false }, ticks:{ font:{size:11} }, border:{ display:false } };
+const yGrid   = { grid:{ color:GRID }, border:{ display:false }, ticks:{ callback:v=>v+'%', font:{size:11} } };
+const xClean  = { grid:{ display:false }, ticks:{ font:{size:11} }, border:{ display:false } };
+
+const hOpts = () => ({ responsive:true, indexAxis:'y', plugins:{ legend:{display:false} }, scales:{ x:xPct, y:yClean } });
+const vOpts = () => ({ responsive:true, plugins:{ legend:{display:false} }, scales:{ y:yGrid, x:xClean } });
+
+/* ─── DATASET BUILDER ────────────────────────────────────────────── */
+function ds(key) {
+  const d = DATA[key];
+  const showS = filter !== 'professionals';
+  const showP = filter !== 'students';
+  const out = [];
+  if (showS && d.students)
+    out.push({ label:'Students',      data:d.students,      backgroundColor:SF, borderColor:S, borderWidth:2, borderRadius:3, borderSkipped:false });
+  if (showP && d.professionals)
+    out.push({ label:'Professionals', data:d.professionals, backgroundColor:PF, borderColor:P, borderWidth:2, borderRadius:3, borderSkipped:false });
+  return out;
+}
+
+/* ─── BUILD ──────────────────────────────────────────────────────── */
+function build() {
+  /* Demographics */
+  const ages = DATA.age.values;
+  charts.age = new Chart('c-age', { type:'bar',
+    data:{ labels:DATA.age.labels, datasets:[{ data:ages,
+      backgroundColor: ages.map((_,i)=>i===2?'rgba(37,99,235,0.20)':'rgba(30,58,95,0.08)'),
+      borderColor:     ages.map((_,i)=>i===2?S:'rgba(30,58,95,0.20)'),
+      borderWidth:1.5, borderRadius:3, borderSkipped:false }] },
+    options: vOpts()
+  });
+
+  const cnt = DATA.country.values;
+  charts.country = new Chart('c-country', { type:'bar',
+    data:{ labels:DATA.country.labels, datasets:[{ data:cnt,
+      backgroundColor: cnt.map((_,i)=>i===0?'rgba(37,99,235,0.20)':'rgba(30,58,95,0.08)'),
+      borderColor:     cnt.map((_,i)=>i===0?S:'rgba(30,58,95,0.20)'),
+      borderWidth:1.5, borderRadius:3 }] },
+    options: vOpts()
+  });
+
+  charts.gender = new Chart('c-gender', { type:'doughnut',
+    data:{ labels:DATA.gender.labels, datasets:[{ data:DATA.gender.values,
+      backgroundColor:['rgba(37,99,235,0.80)','rgba(13,148,136,0.80)','rgba(209,213,219,0.80)'],
+      borderColor:'#ffffff', borderWidth:3, hoverOffset:6 }] },
+    options:{ cutout:'68%',
+      plugins:{ legend:{ display:true, position:'bottom', labels:{ color:'#6B7280', font:{size:11}, boxWidth:11, padding:12 } },
+        tooltip:{ callbacks:{ label:ctx=>` ${ctx.label}: ${ctx.parsed}%` } } } }
+  });
+
+  charts.edu = new Chart('c-edu', { type:'bar',
+    data:{ labels:DATA.edu.labels, datasets:[
+      { label:'Students',      data:DATA.edu.students,      backgroundColor:SF, borderColor:S, borderWidth:2, borderRadius:3 },
+      { label:'Professionals', data:DATA.edu.professionals, backgroundColor:PF, borderColor:P, borderWidth:2, borderRadius:3 }
+    ]}, options: vOpts()
+  });
+
+  /* Comparison charts */
+  const comp = {
+    lang:'c-lang', ide:'c-ide', notebooks:'c-notebooks',
+    frameworks:'c-frameworks', viz:'c-viz', algos:'c-algos',
+    courses:'c-courses', media:'c-media',
+    cloudPlat:'c-cloud-plat', db:'c-db', cloudProd:'c-cloud-prod',
+    bi:'c-bi', mlprod:'c-mlprod', mltrack:'c-mltrack'
+  };
+
+  for (const [key, id] of Object.entries(comp)) {
+    charts[key] = new Chart(id, { type:'bar',
+      data:{ labels:DATA[key].labels, datasets:ds(key) },
+      options: hOpts()
+    });
+  }
+}
+
+/* ─── FILTER ─────────────────────────────────────────────────────── */
+const compKeys = ['lang','ide','notebooks','frameworks','viz','algos','courses','media','cloudPlat','db','cloudProd','bi','mlprod','mltrack'];
+
+function setFilter(f, btn) {
+  filter = f;
+  document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active','is-s','is-p'));
+  btn.classList.add('active');
+  if (f === 'students')      btn.classList.add('is-s');
+  if (f === 'professionals') btn.classList.add('is-p');
+  compKeys.forEach(k => { if (charts[k]) { charts[k].data.datasets = ds(k); charts[k].update('active'); } });
+}
+
+/* ─── NAVIGATION ─────────────────────────────────────────────────── */
+const sectionIds = {
+  demographics:'sec-demographics', languages:'sec-languages',
+  ml:'sec-ml', cloud:'sec-cloud', bi:'sec-bi', learning:'sec-learning'
+};
+
+function go(id, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(n => n.classList.remove('active'));
+  document.getElementById(sectionIds[id]).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ─── INIT ───────────────────────────────────────────────────────── */
+build();
+</script>
+</body>
+</html>
